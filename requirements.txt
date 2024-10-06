@@ -1,0 +1,12 @@
+torch
+torchvision
+tensorflow==1.15.5
+scipy==1.2.3
+scikit-learn
+matplotlib
+pyparsing
+scikit-image
+numpy
+tqdm
+pandas
+opencv-python==4.5.3.56

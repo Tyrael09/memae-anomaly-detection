@@ -1,7 +1,7 @@
 python script_training.py \
     --ModelName MemAE \
     --ModelSetting Conv3DSpar \
-    --Dataset UCSD_P2_256 \
+    --Dataset Cataract \
     --MemDim 2000 \
     --EntropyLossWeight 0.0002 \
     --ShrinkThres 0.0025 \
@@ -10,6 +10,6 @@ python script_training.py \
     --SaveCheckInterval 1 \
     --IsTbLog True \
     --IsDeter True \
-    --DataRoot ./datasets/processed/ \
+    --DataRoot /local/scratch/Cataract-1K-Full-Videos/ \
     --ModelRoot ./results/ \
     --Suffix Non

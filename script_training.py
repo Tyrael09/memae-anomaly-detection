@@ -6,11 +6,9 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 import numpy as np
 import data
-import scipy.io as sio
 from options.training_options import TrainOptions
 import utils
-import time
-from models import AutoEncoderCov3D, AutoEncoderCov3DMem
+from models import AutoEncoderCov3DMem
 from models import EntropyLossEncap
 
 ###
@@ -45,9 +43,12 @@ img_crop_size = 0
 print('bs=%d, lr=%f, entrloss=%f, shr=%f, memdim=%d' % (batch_size_in, learning_rate, entropy_loss_weight, sparse_shrink_thres, mem_dim_in))
 ############
 ## data path
-data_root = opt.DataRoot + opt.Dataset + '/'
-tr_data_frame_dir = data_root + 'Train/'
-tr_data_idx_dir = data_root + 'Train_idx/'
+data_root = opt.DataRoot # video location - not used atm
+# print(data_root)
+#tr_data_frame_dir = data_root + 'Train/'
+#print(tr_data_frame_dir)
+#tr_data_idx_dir = data_root + 'Train_idx/'
+#print(tr_data_idx_dir)
 
 ############ model saving dir path
 saving_root = opt.ModelRoot
@@ -68,14 +69,20 @@ elif(chnum_in_==3):
     norm_mean = (0.5, 0.5, 0.5)
     norm_std = (0.5, 0.5, 0.5)
 
-frame_trans = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(norm_mean, norm_std)
-    ])
+height = width = 128
+frame_trans = transforms.Compose([transforms.Grayscale(num_output_channels=1),
+                                  transforms.ToTensor(), # could change to only run this on cpu and rest on gpu.. might be faster
+                                  transforms.Normalize([0.5], [0.5])
+                                  ])
+
 unorm_trans = utils.UnNormalize(mean=norm_mean, std=norm_std)
 
+
+frame_root = '/local/scratch/hendrik/cataract_frames_downsized/'
+my_csv = '/local/scratch/hendrik/video_annotations_full.csv'
+
 ###### data
-video_dataset = data.VideoDataset(tr_data_idx_dir, tr_data_frame_dir, transform=frame_trans)
+video_dataset = data.MyDataset(frame_root=frame_root, csv_in=my_csv, transform=frame_trans)
 tr_data_loader = DataLoader(video_dataset,
                             batch_size=batch_size_in,
                             shuffle=True,
@@ -105,8 +112,10 @@ save_check_interval = opt.SaveCheckInterval
 tb_img_log_interval = opt.TBImgLogInterval
 global_ite_idx = 0 # for logging
 for epoch_idx in range(0, max_epoch_num):
-    for batch_idx, (item, frames) in enumerate(tr_data_loader):
-        frames = frames.to(device)
+    for batch_idx, frames in enumerate(tr_data_loader): # (item, frames) -> frames (my dataset doesn't return "item")
+        frames = frames.to(device)        
+        # Assuming the shape of `frames` is [14, 16, 1, 128, 128] (batch, frames, channels, height, width)
+        frames = frames.view(frames.size(0), 1, 16, 128, 128)
         if (opt.ModelName == 'MemAE'):
             recon_res = model(frames)
             recon_frames = recon_res['output']
