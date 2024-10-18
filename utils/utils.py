@@ -101,9 +101,7 @@ def btv2btf(frames_in):
 
 def get_model_setting(opt):
     if(opt.ModelName == 'MemAE'):
-        model_setting = opt.ModelName + '_' + opt.ModelSetting + '_' + opt.Dataset + '_MemDim' + str(opt.MemDim) \
-                        + '_EntW' + str(opt.EntropyLossWeight) + '_ShrThres' + str(opt.ShrinkThres) \
-                        + '_Seed' + str(opt.Seed) + '_' + opt.Suffix
+        model_setting = opt.ModelName + '_MemDim' + str(opt.MemDim)  + '_FrameNum' + str(opt.FrameNum) + opt.Suffix
     elif(opt.ModelName == 'AE'):
         model_setting = opt.ModelName + '_' + opt.ModelSetting + '_' + opt.Dataset \
                         + '_' + opt.Suffix
