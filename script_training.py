@@ -41,23 +41,15 @@ sparse_shrink_thres = opt.ShrinkThres
 img_crop_size = 0
 
 print('bs=%d, lr=%f, entrloss=%f, shr=%f, memdim=%d' % (batch_size_in, learning_rate, entropy_loss_weight, sparse_shrink_thres, mem_dim_in))
-############
-## data path
-data_root = opt.DataRoot # video location - not used atm
-# print(data_root)
-#tr_data_frame_dir = data_root + 'Train/'
-#print(tr_data_frame_dir)
-#tr_data_idx_dir = data_root + 'Train_idx/'
-#print(tr_data_idx_dir)
 
 ############ model saving dir path
 saving_root = opt.ModelRoot
-saving_model_path = os.path.join(saving_root, 'model_' + model_setting + '/')
+saving_model_path = os.path.join(saving_root, 'model_' + model_setting + '/') # './models/model_Memae...epoch_0100_final.pt/'
 utils.mkdir(saving_model_path)
 
 ### tblog
 if(opt.IsTbLog):
-    log_path = os.path.join(saving_root, 'log_'+model_setting + '/')
+    log_path = os.path.join(saving_root, 'log_'+ model_setting + '/') # tensorboard logs at models/log_MemAE_...Seed1_Non/events.out.tfevents.1728225989.pc3054
     utils.mkdir(log_path)
     tb_logger = utils.Logger(log_path)
 
@@ -79,10 +71,13 @@ unorm_trans = utils.UnNormalize(mean=norm_mean, std=norm_std)
 
 
 frame_root = '/local/scratch/hendrik/cataract_frames_downsized/'
-my_csv = '/local/scratch/hendrik/video_annotations_full.csv'
+my_csv = '/local/scratch/hendrik/train_set.csv'
 
 ###### data
-video_dataset = data.MyDataset(frame_root=frame_root, csv_in=my_csv, transform=frame_trans)
+overlap_ratio = 1/4
+overlap_len = framenum_in_ * overlap_ratio # overlap = (clip_length / 4) * overlap_ratio, experiment with [1,2,3]
+print(f"overlap: {overlap_len}")
+video_dataset = data.MyDataset(frame_root=frame_root, csv_in=my_csv, clip_len=framenum_in_, overlap=overlap_len, transform=frame_trans) 
 tr_data_loader = DataLoader(video_dataset,
                             batch_size=batch_size_in,
                             shuffle=True,
@@ -112,10 +107,10 @@ save_check_interval = opt.SaveCheckInterval
 tb_img_log_interval = opt.TBImgLogInterval
 global_ite_idx = 0 # for logging
 for epoch_idx in range(0, max_epoch_num):
-    for batch_idx, frames in enumerate(tr_data_loader): # (item, frames) -> frames (my dataset doesn't return "item")
+    for batch_idx, (_, frames) in enumerate(tr_data_loader): # (item, frames) -> frames (my dataset doesn't return "item")
         frames = frames.to(device)        
         # Assuming the shape of `frames` is [14, 16, 1, 128, 128] (batch, frames, channels, height, width)
-        frames = frames.view(frames.size(0), 1, 16, 128, 128)
+        frames = frames.view(frames.size(0), chnum_in_, framenum_in_, height, width)
         if (opt.ModelName == 'MemAE'):
             recon_res = model(frames)
             recon_frames = recon_res['output']
