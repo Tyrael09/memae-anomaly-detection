@@ -9,3 +9,6 @@ models/*
 !models/memae_3dconv.py
 !models/README.md 
 !models/memory_module.py
+!models/AE_Conv3D_UCSD_P2_256_Non.pt
+!models/MemAE_Conv3DSpar_UCSD_P2_256_MemDim2000_EntW0.0002_ShrThres0.0025_Non.pt
+!models/__pycache__/
