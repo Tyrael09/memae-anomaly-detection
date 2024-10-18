@@ -1,0 +1,11 @@
+# Ignore everything in the models directory
+models/*
+*.tfevents.*
+
+# Except for the files:
+!models/__init__.py
+!models/ae_3dconv.py
+!models/entropy_loss.py
+!models/memae_3dconv.py
+!models/README.md 
+!models/memory_module.py
