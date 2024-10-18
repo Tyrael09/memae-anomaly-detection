@@ -32,9 +32,9 @@ class TestOptions():
         parser.add_argument('--ShrinkThres', help='ShrinkThres', type=float, default=0.0025)
         ##
         parser.add_argument('--ModelRoot', help='Path and name for trained model.', type=str, default='./models/')
-        parser.add_argument('--ModelFilePath', help='Path for a pretrained modle.', type=str, default=None)
-        parser.add_argument('--DataRoot', help='DataPath', type=str, default='/local/scratch/Cataract-1K-Full-Videos/')
-        parser.add_argument('--OutRoot', help='Path for output', type=str, default='./results/')
+        parser.add_argument('--ModelFilePath', help='Path for a pretrained modle.', type=str, default='./models/model_MemAE_Conv3DSpar_Cataract_MemDim2000_EntW0.0002_ShrThres0.0025_Seed1_Non/MemAE_Conv3DSpar_Cataract_MemDim2000_EntW0.0002_ShrThres0.0025_Seed1_Non_epoch_0099_final.pt') # specify model
+        parser.add_argument('--DataRoot', help='DataPath', type=str, default='/local/scratch/hendrik/cataract_test_frames_downsized/') # not used in script
+        parser.add_argument('--OutRoot', help='Path for output', type=str, default='./results/') # TODO: update path between experiments
         ##
         parser.add_argument('--Suffix', help='Suffix', type=str, default='Non')
 
