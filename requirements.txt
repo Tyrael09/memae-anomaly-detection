@@ -6,7 +6,7 @@ scikit-learn
 matplotlib
 pyparsing
 scikit-image
-numpy
+numpy==1.18.0
 tqdm
 pandas
 opencv-python==4.5.3.56
