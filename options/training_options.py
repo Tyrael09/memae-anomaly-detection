@@ -21,8 +21,8 @@ class TrainOptions():
         parser.add_argument('--IsTbLog', type=str2bool, default=True)
         parser.add_argument('--Dataset', help='Dataset', type=str, default='Cataract')
         parser.add_argument('--ImgChnNum', help='image channel', type=int, default=1)
-        parser.add_argument('--FrameNum', help='frame num for video clip', type=int, default=8) # was 16, TODO: change between experiements
-        parser.add_argument('--BatchSize', help='training batchsize', type=int, default=400) # TODO: change along with FrameNum 
+        parser.add_argument('--FrameNum', help='frame num for video clip', type=int, default=16) # TODO: change between experiments
+        parser.add_argument('--BatchSize', help='training batchsize', type=int, default=200) # TODO: change along with FrameNum 
         parser.add_argument('--LR', help='learning rate', type=float, default=1e-4)
         parser.add_argument('--EpochNum', help='max epoch num', type=int, default=101) # starts counting at 0
         parser.add_argument('--MemDim', help='Memory Dimention', type=int, default=2000)
@@ -37,7 +37,8 @@ class TrainOptions():
         parser.add_argument('--DataRoot', help='DataPath', type=str, default='/local/scratch/Cataract-1K-Full-Videos/')
         parser.add_argument('--ModelRoot', help='Path for saving model', type=str, default='./models/')
         ##
-        parser.add_argument('--Suffix', help='Suffix', type=str, default='_Overlap0.25') # TODO: change name when changing FrameNum or 
+        parser.add_argument('--Suffix', help='Suffix', type=str, default='_Overlap0.75') # TODO: change along with overlap in script_training.py
+        parser.add_argument('--CheckpointPath', help='Path for a pretrained model', type=str, default=None) # specify model
 
         self.initialized = True
         self.parser = parser
@@ -64,6 +65,3 @@ class TrainOptions():
             self.print_options(opt)
         self.opt = opt
         return self.opt
-
-
-
