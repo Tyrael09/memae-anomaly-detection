@@ -9,10 +9,11 @@ import pandas as pd
 from PIL import Image
 
 class MyDataset(Dataset):
-    def __init__(self, frame_root, csv_in, clip_len, overlap, use_cuda=True, transform=None):
+    def __init__(self, frame_root, csv_in, clip_len, overlap, split=[0], use_cuda=True, transform=None):
         self.frame_root = frame_root
         self.clip_len = int(clip_len)
         self.overlap = int(overlap)
+        self.split = split
         self.frame_df = self.generate_lists(csv_in)  # Directly store the dataframe
         self.use_cuda = use_cuda
         self.transform = transform
@@ -40,13 +41,13 @@ class MyDataset(Dataset):
             tmp_frame_trans = transforms.ToTensor()
             frames = torch.cat([tmp_frame_trans(frame).unsqueeze(0) for frame in vid_frames], dim=0)
 
-        return video_id, frames # TODO: change here if causing problems during next training run!
+        return video_id, frames
 
-    def generate_lists(self, csv_in, split=[0], frame_skip=4): # don't change frame_skip, would require extracting new frames for all videos
+    def generate_lists(self, csv_in, frame_skip=4): # don't change frame_skip, would require extracting new frames for all videos
         df = pd.read_csv(csv_in)
         frame_data = []
         for _, row in df.iterrows():
-            if row['label'] in split: 
+            if row['label'] in self.split: 
                 start = int(row['start'] * 60) # convert time to frame index
                 end = int(row['end'] * 60)
                 video_id = row['video_id']
@@ -62,9 +63,13 @@ class MyDataset(Dataset):
                         next_index += frame_skip # 4
                     remaining_frames = end - next_index + frame_skip  # Check how many frames remain
                     if remaining_frames < self.clip_len and len(sub_list) < self.clip_len: # If not enough frames are left, increase overlap to fill the last list
-                        while len(sub_list) < self.clip_len:
-                            sub_list.insert(0, sub_list[0] - frame_skip)
-
+                        if num_clips > 1:
+                            while len(sub_list) < self.clip_len:
+                                sub_list.insert(0, sub_list[0] - frame_skip)
+                        else:
+                            while len(sub_list) < self.clip_len:
+                                print(f"Insufficient frames for one clip in video {video_id}")
+                                sub_list.append(sub_list[-1]) # bit of a dumb solution, repeating the last frame... but this should rarely happen anyway TODO: think of a better solution for this
                     frame_data.append([video_id, sub_list])
                     next_index -= self.overlap * frame_skip # index + 4 - 20 -> index - 16 -> overlap of 4
         frame_df = pd.DataFrame(frame_data, columns=['video_id', 'frame_indices'])
