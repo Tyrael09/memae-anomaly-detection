@@ -15,27 +15,19 @@ opt_parser = TestOptions()
 opt = opt_parser.parse(is_print=True)
 use_cuda = opt.UseCUDA
 device = torch.device("cuda" if use_cuda else "cpu")
-
-###
-batch_size_in = opt.BatchSize #1
-chnum_in_ = opt.ImgChnNum      # channel number of the input images
-framenum_in_ = opt.FrameNum  # frame number of the input images in a video clip
+batch_size_in = opt.BatchSize # 1
+chnum_in_ = opt.ImgChnNum # channel number of the input images
+framenum_in_ = opt.FrameNum # frame number of the input images in a video clip
 mem_dim_in = opt.MemDim
 sparse_shrink_thres = opt.ShrinkThres
 
 img_crop_size = 0
 
-######
 model_setting = utils.get_model_setting(opt)
 
-## data path
-# frame_root = opt.Dataroot
-# data_frame_dir = data_root + 'Test/'
-# data_idx_dir = data_root + 'Test_idx/'
-
-############ model path
+# model path
 model_root = opt.ModelRoot
-if(opt.ModelFilePath): # True if string is not empty (!) or None
+if(opt.ModelFilePath): 
     model_path = opt.ModelFilePath
 else:
     model_path = os.path.join(model_root, model_setting + '.pt')
@@ -46,14 +38,10 @@ te_res_path = te_res_root + '/' + 'res_' + model_setting
 utils.mkdir(te_res_path)
 
 ###### loading trained model
-if (opt.ModelName == 'AE'):
-    print("not MemAE")
-    # model = AutoEncoderCov3D(chnum_in_)
-elif(opt.ModelName=='MemAE'):
+if(opt.ModelName=='MemAE'):
     model = AutoEncoderCov3DMem(chnum_in_, mem_dim_in, shrink_thres=sparse_shrink_thres)
 else:
-    model = []
-    print('Wrong Name.')
+    raise ValueError('Wrong model name.')
 
 ##
 model_para = torch.load(model_path)
@@ -69,31 +57,46 @@ elif(chnum_in_==3):
     norm_mean = (0.5, 0.5, 0.5)
     norm_std = (0.5, 0.5, 0.5)
 
+height = width = 128
 frame_trans = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1), # seems to be necessary. Why not train on 3 channels though?
         transforms.ToTensor(),
         transforms.Normalize(norm_mean, norm_std)
     ])
 unorm_trans = utils.UnNormalize(mean=norm_mean, std=norm_std)
 
 ##
-frame_root = '/local/scratch/hendrik/cataract_test_frames_downsized/'
-my_csv = '/local/scratch/hendrik/test_set.csv'
+frame_root = '/local/scratch/hendrik/cataract_frames_downsized/'
+my_csv = '/local/scratch/hendrik/test_set_updated.csv'
+overlap_ratio = 2 / 4 # TODO: make sure to change name in testing_options.py accordingly!
+overlap_len = framenum_in_ * overlap_ratio
+print(f"overlap: {overlap_len}")
 
 ###### data
-my_dataset = data.MyDataset(frame_root=frame_root, csv_in=my_csv, transform=frame_trans)
-tr_data_loader = DataLoader(my_dataset,
+video_dataset = data.MyDataset(frame_root=frame_root, 
+                                csv_in=my_csv, 
+                                clip_len=framenum_in_, 
+                                overlap=overlap_len, 
+                                split=[0,1],
+                                transform=frame_trans,
+                                ) 
+
+tr_data_loader = DataLoader(dataset=video_dataset,
                             batch_size=batch_size_in,
-                            shuffle=True,
+                            shuffle=False,
                             )
 
-## Testing loop
+
+# Dictionary to store errors by video name
+errors_by_video = {}
+
 with torch.no_grad():
     for batch_idx, (video_name, frames) in enumerate(tr_data_loader):  
-        # frames = frames.view(frames.size(0), 1, 16, 128, 128) # toy around with this to match required dimensions?
+        # Process frames for each clip
         frames = frames.to(device)  
+        frames = frames.view(frames.size(0), chnum_in_, framenum_in_, height, width)
         print(f'[batch {batch_idx + 1}/{len(tr_data_loader)}]')  
-        recon_error_list = []
-
+        
         if opt.ModelName == 'MemAE':
             recon_res = model(frames)
             recon_frames = recon_res['output']
@@ -101,11 +104,22 @@ with torch.no_grad():
             r = utils.crop_image(r, img_crop_size)
             sp_error_map = torch.sum(r ** 2, dim=1) ** 0.5
             sp_error_vec = sp_error_map.view(sp_error_map.size(0), -1)
-            recon_error = torch.mean(sp_error_vec, dim=-1)
-            recon_error_list += recon_error.cpu().tolist()
-        else:
-            print('Wrong ModelName.')
-        np.save(os.path.join(te_res_path, f'{video_name}.npy'), recon_error_list) 
+            recon_error = torch.mean(sp_error_vec, dim=-1)  # Average error per clip in batch
 
+            # Clean up video_name tuple to get the actual name
+            clean_video_name = str(video_name[0]).strip("()'")
+            
+            # Initialize the error list for this video if it doesn't exist
+            if clean_video_name not in errors_by_video:
+                errors_by_video[clean_video_name] = []
+            
+            # Append the error for this clip to the video-specific list
+            errors_by_video[clean_video_name].extend(recon_error.cpu().tolist())
+        else:
+            raise ValueError('Wrong model name.')
+
+# Save the accumulated error lists for each video
+for video_name, error_list in errors_by_video.items():
+    np.save(os.path.join(te_res_path, f'{video_name}.npy'), error_list)
 ## evaluation
-utils.my_eval_video(frame_root, te_res_path, my_csv, is_show=False) # TODO: rewrite this too??
+utils.my_eval_video(frame_root, te_res_path, my_csv, is_show=True) 
