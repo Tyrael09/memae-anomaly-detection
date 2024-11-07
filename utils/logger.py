@@ -2,11 +2,12 @@
 from __future__ import absolute_import, print_function
 import tensorflow as tf
 import numpy as np
-import scipy.misc 
+import scipy.misc
+
 try:
     from StringIO import StringIO  # Python 2.7
 except ImportError:
-    from io import BytesIO         # Python 3.x
+    from io import BytesIO  # Python 3.x
 
 
 class Logger(object):
@@ -29,21 +30,21 @@ class Logger(object):
                 s = StringIO()
             except:
                 s = BytesIO()
-            #print(img.shape
+            # print(img.shape
             img = np.clip(img, 0, 1)
             scipy.misc.toimage(img).save(s, format="png")
 
             # Create an Image object
-            img_sum = tf.compat.v1.Summary.Image(encoded_image_string=s.getvalue(),
-                                       height=img.shape[0],
-                                       width=img.shape[1])
+            img_sum = tf.compat.v1.Summary.Image(
+                encoded_image_string=s.getvalue(), height=img.shape[0], width=img.shape[1]
+            )
             # Create a Summary value
-            img_summaries.append(tf.compat.v1.Summary.Value(tag='%s/%d' % (tag, i), image=img_sum))
+            img_summaries.append(tf.compat.v1.Summary.Value(tag="%s/%d" % (tag, i), image=img_sum))
 
         # Create and write Summary
         summary = tf.compat.v1.Summary(value=img_summaries)
         self.writer.add_summary(summary, step)
-        
+
     def histo_summary(self, tag, values, step, bins=1000):
         """Log a histogram of the tensor of values."""
 
