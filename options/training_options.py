@@ -18,27 +18,27 @@ class TrainOptions:
         parser.add_argument("--IsDeter", type=str2bool, help="False for efficiency", default=True)
         parser.add_argument("--IsTbLog", type=str2bool, default=True)
         parser.add_argument("--Dataset", help="Dataset", type=str, default="Cataract")
-        parser.add_argument("--ImgChnNum", help="image channels", type=int, default=3)  # TODO: change
-        parser.add_argument("--FrameNum", help="frames per clip", type=int, default=16)  # TODO: change
-        parser.add_argument("--BatchSize", help="batchsize", type=int, default=200)  # TODO: change
+        parser.add_argument("--ImgChnNum", help="image channels", type=int, default=1)  # TODO: change
+        parser.add_argument("--FrameNum", help="frames per clip", type=int, default=8)  # TODO: change
+        parser.add_argument("--BatchSize", help="batchsize", type=int, default=300)  # TODO: change
         parser.add_argument("--LR", help="learning rate", type=float, default=1e-4)
-        parser.add_argument("--EpochNum", help="max epoch num", type=int, default=101)  # starts counting at 0
-        parser.add_argument("--MemDim", help="Memory Dimention", type=int, default=2000)  # TODO: change too
+        parser.add_argument("--EpochNum", help="max epoch num", type=int, default=101)
+        parser.add_argument("--MemDim", help="Memory Dimention", type=int, default=8000)  # TODO: change
         parser.add_argument("--EntropyLossWeight", help="EntropyLossWeight", type=float, default=0.0002)
         parser.add_argument("--ShrinkThres", help="ShrinkThres", type=float, default=0.0025)
         parser.add_argument("--TextLogInterval", help="text log ite interval", type=int, default=1)
         parser.add_argument("--SnapInterval", help="snap saving ite interval", type=int, default=50)
-        parser.add_argument("--TBImgLogInterval", help="img log ite interval", type=int, default=20)
+        parser.add_argument("--TBImgLogInterval", help="img log ite interval", type=int, default=50)
         parser.add_argument("--SaveCheckInterval", help="checkpoint saving epoch interval", type=int, default=20)
         parser.add_argument("--DataRoot", help="DataPath", type=str, default="/local/scratch/Cataract-1K-Full-Videos/")
-        parser.add_argument("--ModelRoot", help="Path for saving model", type=str, default="./models/")
-        parser.add_argument("--Overlap", help="Overlap", type=float, default=1 / 4)  # TODO: change this
+        parser.add_argument("--ModelRoot", help="model save path", type=str, default="/local/scratch/hendrik/models/")
+        parser.add_argument("--Overlap", help="Overlap", type=float, default=3 / 4)  # TODO: change
         parser.add_argument(
             "--CheckpointPath",
-            help="Path for a pretrained model",
+            help="pretrained model",
             type=str,
-            default=None,
-        )  # specify model
+            default="/local/scratch/hendrik/models/model_MemAE_MemDim8000_FrameNum8_Overlap0.75_ChNum1/MemAE_MemDim8000_FrameNum8_Overlap0.75_ChNum1_epoch_0080.pt",
+        )  # TODO: specify model
 
         self.initialized = True
         self.parser = parser
