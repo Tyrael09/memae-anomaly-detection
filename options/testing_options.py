@@ -18,35 +18,25 @@ class TestOptions:
     def initialize(self):
         parser = argparse.ArgumentParser()
         parser.add_argument("--UseCUDA", help="Use CUDA?", type=str2bool, nargs="?", default=True)
-        parser.add_argument("--Mode", help="script mode", choices=["train", "eval"], default="eval")
         parser.add_argument("--ModelName", help="AE/MemAE", type=str, default="MemAE")
-        parser.add_argument(
-            "--ModelSetting", help="Conv3D/Conv3DSpar", type=str, default="Conv3DSpar"
-        )  # give the layer details later
+        parser.add_argument("--ModelSetting", help="Conv3D/Conv3DSpar", type=str, default="Conv3DSpar")
         parser.add_argument("--Seed", type=int, default=1)
         parser.add_argument("--Dataset", help="Dataset", type=str, default="Cataract")
-        parser.add_argument("--ImgChnNum", help="image channel", type=int, default=1)
-        parser.add_argument("--FrameNum", help="frame num for VIDEO clip", type=int, default=16)  # TODO: change this
+        parser.add_argument("--ImgChnNum", help="image channel", type=int, default=1)  # TODO: change
+        parser.add_argument("--FrameNum", help="frame num for VIDEO clip", type=int, default=8)  # TODO: change
         parser.add_argument("--BatchSize", help="BatchSize", type=int, default=1)
-        parser.add_argument("--MemDim", help="Memory Dimention", type=int, default=2000)  # TODO: change this
+        parser.add_argument("--MemDim", help="Memory Dimention", type=int, default=8000)  # TODO: change
         parser.add_argument("--EntropyLossWeight", help="EntropyLossWeight", type=float, default=0.0002)
         parser.add_argument("--ShrinkThres", help="ShrinkThres", type=float, default=0.0025)
-        ##
-        parser.add_argument("--ModelRoot", help="Path and name for trained model.", type=str, default="./models/")
+        parser.add_argument("--ModelRoot", help="model dir", type=str, default="/local/scratch/hendrik/models/")
         parser.add_argument(
             "--ModelFilePath",
-            help="Path for a pretrained modle.",
+            help="pretrained model",
             type=str,
-            default="models/model_MemAE_MemDim2000_FrameNum16_Overlap0.25/MemAE_MemDim2000_FrameNum16_Overlap0.25_epoch_0100_final.pt",
-        )  # specify model
-        parser.add_argument(
-            "--DataRoot", help="DataPath", type=str, default="/local/scratch/hendrik/cataract_test_frames_downsized/"
-        )  # not used in script
-        parser.add_argument(
-            "--OutRoot", help="Path for output", type=str, default="./results/4/"
-        )  # TODO: update path between experiments
-        ##
-        parser.add_argument("--Overlap", help="Overlap", type=float, default=1 / 4)  # TODO: change this
+            default="/local/scratch/hendrik/models/model_MemAE_MemDim8000_FrameNum8_Overlap0.75_ChNum1/",  # TODO: change
+        )
+        parser.add_argument("--OutRoot", help="Path for output", type=str, default="./results/4/")
+        parser.add_argument("--Overlap", help="Overlap", type=float, default=3 / 4)  # TODO: change
 
         self.initialized = True
         self.parser = parser
