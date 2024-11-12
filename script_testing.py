@@ -11,15 +11,15 @@ from options.testing_options import TestOptions
 import utils
 from models import AutoEncoderCov3DMem
 
-###
+
 opt_parser = TestOptions()
 opt = opt_parser.parse(is_print=True)
 use_cuda = opt.UseCUDA
 device = torch.device("cuda" if use_cuda else "cpu")
 batch_size_in = opt.BatchSize  # 1
-chnum_in_ = opt.ImgChnNum  # channel number of the input images
-framenum_in_ = opt.FrameNum  # frame number of the input images in a video clip
-mem_dim_in = opt.MemDim  # memory dimension per pixel
+chnum_in_ = opt.ImgChnNum  
+framenum_in_ = opt.FrameNum  
+mem_dim_in = opt.MemDim  
 sparse_shrink_thres = opt.ShrinkThres
 img_crop_size = 0
 model_setting = utils.get_model_setting(opt)
@@ -31,49 +31,47 @@ if opt.ModelFilePath:
 else:
     model_path = os.path.join(model_root, model_setting + ".pt")
 
-### test result path
+# test result path
 te_res_root = opt.OutRoot  # ./results/1/
 test_results_path = te_res_root + "/" + "res_" + model_setting
 utils.mkdir(test_results_path)
 
-###### loading trained model
+# loading trained model
 if opt.ModelName == "MemAE":
     model = AutoEncoderCov3DMem(chnum_in_, mem_dim_in, shrink_thres=sparse_shrink_thres)
 else:
     raise ValueError("Wrong model name.")
 
-##
 model_para = torch.load(model_path)
 model.load_state_dict(model_para)
 model.to(device)
 model.eval()
 
-##
+# Frame transformations & data normalisation
 if chnum_in_ == 1:
     norm_mean = [0.5]
     norm_std = [0.5]
+    frame_trans = transforms.Compose(
+        [
+            transforms.Grayscale(num_output_channels=1),  # seems to be necessary. Why not train on 3 channels though?
+            transforms.ToTensor(),
+            transforms.Normalize(norm_mean, norm_std),
+        ]
+    )
 elif chnum_in_ == 3:
     norm_mean = (0.5, 0.5, 0.5)
     norm_std = (0.5, 0.5, 0.5)
+    frame_trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize(norm_mean, norm_std)])
 
 height = width = 128
-frame_trans = transforms.Compose(
-    [
-        transforms.Grayscale(num_output_channels=1),  # seems to be necessary. Why not train on 3 channels though?
-        transforms.ToTensor(),
-        transforms.Normalize(norm_mean, norm_std),
-    ]
-)
-unorm_trans = utils.UnNormalize(mean=norm_mean, std=norm_std)
 
-##
+# Data
 frame_root = "/local/scratch/hendrik/cataract_frames_downsized/"
 test_csv = "/local/scratch/hendrik/test_set.csv"
 overlap_ratio = opt.Overlap
 overlap_len = framenum_in_ * overlap_ratio
 print(f"overlap: {overlap_len}")
 
-###### data
 video_dataset = data.MyDataset(
     frame_root=frame_root,
     csv_in=test_csv,
@@ -131,4 +129,4 @@ with torch.no_grad():
 for video_name, error_list in errors_by_video.items():
     np.save(os.path.join(test_results_path, f"{video_name}.npy"), error_list)
 ## evaluation
-utils.my_eval_video(frame_root, test_results_path, eval_csv, is_show=True)
+utils.my_eval_video(frame_root, test_results_path, eval_csv, normal=False, is_show=True)
