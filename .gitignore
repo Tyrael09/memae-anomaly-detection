@@ -1,5 +1,6 @@
 # Ignore everything in the models directory
 results/*
+*.npy
 matlab_script/*
 *.m
 models/*
@@ -7,6 +8,7 @@ models/*
 models/**/*.tfevents*
 */__pycache__/*
 data/__pycache__/*
+results
 
 # Except for the files:
 !models/__init__.py
