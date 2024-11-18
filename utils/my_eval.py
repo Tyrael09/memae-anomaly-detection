@@ -4,8 +4,7 @@ import numpy as np
 import sklearn.metrics as skmetr
 import matplotlib.pyplot as plt
 
-
-def my_eval_video(data_path, res_path, eval_csv, normal=False, is_show=True):
+def my_eval_video(data_path, res_path, eval_csv, frames_per_clip=16, normal=True, is_show=True, fps=60):
     df = pd.read_csv(eval_csv)
 
     gt_labels_list = []
@@ -24,7 +23,6 @@ def my_eval_video(data_path, res_path, eval_csv, normal=False, is_show=True):
             continue
 
         res_prob = np.load(res_file_path)
-        # res_prob.average()
 
         if res_prob.size == 0:
             print(f"Warning: {res_file_name} is empty.")
@@ -33,18 +31,23 @@ def my_eval_video(data_path, res_path, eval_csv, normal=False, is_show=True):
         res_prob_list.extend(res_prob)
 
         if normal:
-            # normalize regularity score
+            # Normalize regularity score
             res_prob_norm = res_prob - min(res_prob)
             res_prob = 1 - res_prob_norm / max(res_prob_norm)
 
         if is_show:
             plt.figure()
             this_video_df = df.loc[df["video_id"] == video_id]
-            plt.plot(this_video_df["label"].tolist(), label="Ground Truth")
-            plt.plot(res_prob, label="Predicted")
+
+            # Generate time values for the x-axis
+            num_clips = len(res_prob)  # TODO: might need to account for overlap? Or not
+            time_values = np.arange(num_clips) * (frames_per_clip / fps) * 3  # magic number
+
+            plt.plot(time_values, this_video_df["label"].tolist(), label="Ground Truth")
+            plt.plot(time_values, res_prob, label="Predicted")
             plt.ylim(-0.05, 1.05)
             plt.legend()
-            plt.xlabel("Clips")  # use this for video names later..
+            plt.xlabel("Time (seconds)")
             plt.ylabel("Score")
             plt.title(f"Ground Truth vs. Predicted Scores: {video_id}")
             plt.savefig(f"{res_path}/{video_id}.png", dpi=300, bbox_inches="tight")
@@ -67,28 +70,53 @@ def my_eval_video(data_path, res_path, eval_csv, normal=False, is_show=True):
     with open(os.path.join(output_path, "acc.txt"), "w") as acc_file:
         acc_file.write(f"{data_path}\nAUC: {auc}\n")
 
+    # Calculate the optimal threshold
+    distances = np.sqrt((fpr - 0) ** 2 + (tpr - 1) ** 2)
+    optimal_index = np.argmin(distances)
+
+    alt_thresh = 0 # TODO: change or parametrise
+
+    if alt_thresh:
+        distances = tpr - fpr # 0.9 * np.argmax(distances)?
+        optimal_index = np.argmax(distances)
+
+    optimal_threshold = thresholds[optimal_index]
+    print(optimal_threshold)
+    optimal_fpr = fpr[optimal_index]
+    optimal_tpr = tpr[optimal_index]
+
+    # Threshold predictions
+    thresholded_preds = (np.array(res_prob_list) >= optimal_threshold).astype(int)
+
+    # Calculate metrics for thresholded predictions
+    accuracy = skmetr.accuracy_score(gt_labels_list, thresholded_preds)
+    precision = skmetr.precision_score(gt_labels_list, thresholded_preds)
+    recall = skmetr.recall_score(gt_labels_list, thresholded_preds)
+    f1 = skmetr.f1_score(gt_labels_list, thresholded_preds)
+
+    print(f"Threshold: {optimal_threshold}")
+    print(f"Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1 Score: {f1}")
+
+    # Save metrics to file
+    with open(os.path.join(output_path, "metrics.txt"), "w") as metrics_file:
+        metrics_file.write(f"Threshold: {optimal_threshold}\n")
+        metrics_file.write(f"Accuracy: {accuracy}\nPrecision: {precision}\nRecall: {recall}\nF1 Score: {f1}\n")
+
     # Optional visualization
     if is_show:
+        # Thresholded Predictions vs. Ground Truth
         plt.figure()
-        plt.plot(gt_labels_list, label="Ground Truth")
-        plt.plot(res_prob_list, label="Predicted")
-        plt.legend()
-        # Set custom x-axis labels with video names at regular intervals
-        # x_ticks = np.arange(0, len(video_labels), 500)  # Set a larger interval for clarity
-        # x_labels = [video_labels[i] for i in x_ticks]
-        # plt.xticks(ticks=x_ticks, labels=x_labels, rotation=45, ha='right')
-        plt.xlabel("Clips")  # use this for video names later..
-        plt.ylabel("Score")
-        # plt.title('Ground Truth vs. Predicted Scores')
-        plt.savefig(f"{res_path}_auc.png", dpi=300, bbox_inches="tight")
-        plt.close()
+        time_values = np.arange(len(thresholded_preds)) * (frames_per_clip / fps) * 3  # magic number
 
-        # Calculate the optimal threshold
-        distances = np.sqrt((fpr - 0) ** 2 + (tpr - 1) ** 2)
-        optimal_index = np.argmax(distances)
-        optimal_threshold = thresholds[optimal_index]
-        optimal_fpr = fpr[optimal_index]
-        optimal_tpr = tpr[optimal_index]
+        plt.plot(time_values, gt_labels_list, label="Ground Truth")
+        plt.step(time_values, thresholded_preds, label="Thresholded Predictions", where="post")
+        plt.ylim(-0.05, 1.05)
+        plt.legend(loc="upper left")
+        plt.xlabel("Time (seconds)")
+        plt.ylabel("Label")
+        plt.title("Thresholded Predictions vs. Ground Truth")
+        plt.savefig(f"{res_path}_thresholded_comparison.png", dpi=300, bbox_inches="tight")
+        plt.close()
 
         # Plot the ROC curve
         plt.figure(figsize=(8, 6))
@@ -97,8 +125,6 @@ def my_eval_video(data_path, res_path, eval_csv, normal=False, is_show=True):
         plt.scatter(
             optimal_fpr, optimal_tpr, color="red", label=f"Optimal Threshold = {optimal_threshold:.2f}", marker="o"
         )
-
-        # Labels and title
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
         plt.title("Receiver Operating Characteristic (ROC) Curve")
