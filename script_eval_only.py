@@ -5,8 +5,8 @@ from torchvision import transforms
 
 frame_root = "/local/scratch/hendrik/cataract_frames_downsized/"
 test_csv = "/local/scratch/hendrik/test_set.csv"
-res_path = "results/4/res_MemAE_MemDim2000_FrameNum16_Overlap0.25_ChNum3"  # TODO: fix 2nd part later
-chnum_in_ = 3
+res_path = "results/6/MemAE_MemDim2000_FrameNum16_Overlap0.25_ChNum1"  # TODO: change
+chnum_in_ = 1
 
 # Frame transformations & data normalisation
 if chnum_in_ == 1:
@@ -14,7 +14,7 @@ if chnum_in_ == 1:
     norm_std = [0.5]
     frame_trans = transforms.Compose(
         [
-            transforms.Grayscale(num_output_channels=1),  # seems to be necessary. Why not train on 3 channels though?
+            transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
             transforms.Normalize(norm_mean, norm_std),
         ]
@@ -41,4 +41,4 @@ eval_csv = "/local/scratch/hendrik/merged_csv.csv"
 
 
 ## evaluation
-utils.my_eval_video(frame_root, res_path, eval_csv, normal=False, is_show=True)
+utils.my_eval_video(frame_root, res_path, eval_csv, normal=True, is_show=True)
