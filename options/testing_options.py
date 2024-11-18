@@ -23,10 +23,10 @@ class TestOptions:
         parser.add_argument("--ModelSetting", help="Conv3D/Conv3DSpar", type=str, default="Conv3DSpar")
         parser.add_argument("--Seed", type=int, default=1)
         parser.add_argument("--Dataset", help="Dataset", type=str, default="Cataract")
-        parser.add_argument("--ImgChnNum", help="image channel", type=int, default=1)  # Updated
-        parser.add_argument("--FrameNum", help="frame num for VIDEO clip", type=int, default=1)  # Updated
+        parser.add_argument("--ImgChnNum", help="image channel", type=int, default=1)  
+        parser.add_argument("--FrameNum", help="frame num for VIDEO clip", type=int, default=1) 
         parser.add_argument("--BatchSize", help="BatchSize", type=int, default=1)
-        parser.add_argument("--MemDim", help="Memory Dimension", type=int, default=1)  # Updated
+        parser.add_argument("--MemDim", help="Memory Dimension", type=int, default=1)  
         parser.add_argument("--EntropyLossWeight", help="EntropyLossWeight", type=float, default=0.0002)
         parser.add_argument("--ShrinkThres", help="ShrinkThres", type=float, default=0.0025)
         parser.add_argument("--ModelRoot", help="model dir", type=str, default="/local/scratch/hendrik/models/")
@@ -34,10 +34,10 @@ class TestOptions:
             "--ModelFilePath",
             help="pretrained model",
             type=str,
-            default="/local/scratch/hendrik/models/model_MemAE_MemDim2000_FrameNum128_Overlap0.5/MemAE_MemDim2000_FrameNum128_Overlap0.5_epoch_0100_final.pt",
+            default="/local/scratch/hendrik/models/model_MemAE_MemDim2000_FrameNum16_Overlap0.25/MemAE_MemDim2000_FrameNum16_Overlap0.25_epoch_0100_final.pt",
         )
-        parser.add_argument("--OutRoot", help="Path for output", type=str, default="./results/4/")
-        parser.add_argument("--Overlap", help="Overlap", type=float, default=1)  # Updated
+        parser.add_argument("--OutRoot", help="Path for output", type=str, default="./results/6/") # TODO: adjust
+        parser.add_argument("--Overlap", help="Overlap", type=float, default=1)
 
         self.initialized = True
         self.parser = parser
