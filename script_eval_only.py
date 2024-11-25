@@ -41,4 +41,4 @@ eval_csv = "/local/scratch/hendrik/merged_csv.csv"
 
 
 ## evaluation
-utils.my_eval_video(frame_root, res_path, eval_csv, normal=True, is_show=True)
+utils.my_eval_video(res_path, eval_csv, frames_per_clip=16)
