@@ -17,8 +17,8 @@ opt = opt_parser.parse(is_print=True)
 use_cuda = opt.UseCUDA
 device = torch.device("cuda" if use_cuda else "cpu")
 batch_size_in = opt.BatchSize  # 1
-chnum_in_ = opt.ImgChnNum  
-framenum_in_ = opt.FrameNum  
+chnum_in = opt.ImgChnNum  
+framenum_in = opt.FrameNum  
 mem_dim_in = opt.MemDim  
 sparse_shrink_thres = opt.ShrinkThres
 img_crop_size = 0
@@ -32,13 +32,13 @@ else:
     model_path = os.path.join(model_root, model_setting + ".pt")
 
 # test result path
-te_res_root = opt.OutRoot  # ./results/1/
-test_results_path = te_res_root + "/" + "res_" + model_setting
+te_res_root = opt.OutRoot  # ./results/5/
+test_results_path = te_res_root + "/" + model_setting
 utils.mkdir(test_results_path)
 
 # loading trained model
 if opt.ModelName == "MemAE":
-    model = AutoEncoderCov3DMem(chnum_in_, mem_dim_in, shrink_thres=sparse_shrink_thres)
+    model = AutoEncoderCov3DMem(chnum_in, mem_dim_in, shrink_thres=sparse_shrink_thres)
 else:
     raise ValueError("Wrong model name.")
 
@@ -48,17 +48,17 @@ model.to(device)
 model.eval()
 
 # Frame transformations & data normalisation
-if chnum_in_ == 1:
+if chnum_in == 1:
     norm_mean = [0.5]
     norm_std = [0.5]
     frame_trans = transforms.Compose(
         [
-            transforms.Grayscale(num_output_channels=1),  # seems to be necessary. Why not train on 3 channels though?
+            transforms.Grayscale(num_output_channels=1),
             transforms.ToTensor(),
             transforms.Normalize(norm_mean, norm_std),
         ]
     )
-elif chnum_in_ == 3:
+elif chnum_in == 3:
     norm_mean = (0.5, 0.5, 0.5)
     norm_std = (0.5, 0.5, 0.5)
     frame_trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize(norm_mean, norm_std)])
@@ -69,13 +69,13 @@ height = width = 128
 frame_root = "/local/scratch/hendrik/cataract_frames_downsized/"
 test_csv = "/local/scratch/hendrik/test_set.csv"
 overlap_ratio = opt.Overlap
-overlap_len = framenum_in_ * overlap_ratio
+overlap_len = framenum_in * overlap_ratio
 print(f"overlap: {overlap_len}")
 
 video_dataset = data.MyDataset(
     frame_root=frame_root,
     csv_in=test_csv,
-    clip_len=framenum_in_,
+    clip_len=framenum_in,
     overlap=overlap_len,
     split=[0, 1],
     transform=frame_trans,
@@ -101,7 +101,7 @@ with torch.no_grad():
     for batch_idx, (video_name, frames) in enumerate(tr_data_loader):
         # Process frames for each clip
         frames = frames.to(device)
-        frames = frames.view(frames.size(0), chnum_in_, framenum_in_, height, width)
+        frames = frames.view(frames.size(0), chnum_in, framenum_in, height, width)
         print(f"[batch {batch_idx + 1}/{len(tr_data_loader)}]")
 
         if opt.ModelName == "MemAE":
@@ -129,4 +129,4 @@ with torch.no_grad():
 for video_name, error_list in errors_by_video.items():
     np.save(os.path.join(test_results_path, f"{video_name}.npy"), error_list)
 ## evaluation
-utils.my_eval_video(frame_root, test_results_path, eval_csv, normal=False, is_show=True)
+utils.my_eval_video(test_results_path, eval_csv, frames_per_clip=framenum_in)
